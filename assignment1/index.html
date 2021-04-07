@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <meta charset="utf-8">
+   <script src="angular.min.js"></script>
+   <script src="app.js"></script>
     <title>Lunch Checker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="styles/bootstrap.min.css">
@@ -8,17 +11,17 @@
       .message { font-size: 1.3em; font-weight: bold; }
     </style>
   </head>
-<script src="angular.min.js"></script>
-<body ng-app="LunchCheck">  
+<body ng-app="LunchCheck">
+  <h1>Lunch Menu</h1>
    <div ng-controller="LunchCheckController">
      <div>
-        list comma separated dishes you usually have for lunch<input type="text" ng-model="menu">
-      </div>      
-     <div>
-        <button ng-click="CheckMenu()">Check If Too Much</button>
-     </div>         
-     <div>
-          
+        list comma separated dishes you usually have for lunch
+        <input type="text"
+        ng-model="menu">
+      <button ng-click="CheckMenu()">
+          Check If Too Much</button>
+     </div>
+     <div>Message : {{txtMsg}}
      </div>
    </div>
 </body>
