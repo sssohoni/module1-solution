@@ -1,150 +1,86 @@
 (function () {
 'use strict';
 
-angular.module('ShoppingListPromiseApp', [])
-.controller('ShoppingListController', ShoppingListController)
-.service('ShoppingListService', ShoppingListService)
-.service('WeightLossFilterService', WeightLossFilterService);
+angular.module('NarrowItDownApp', [])
+.controller('NarrowItDownController', NarrowItDownController)
+.service('MenuSearchService', MenuSearchService)
+.directive('foundItems', FoundItemsDirective)
+.constant('ApiBasePath', "https://davids-restaurant.herokuapp.com");
 
-ShoppingListController.$inject = ['ShoppingListService'];
-function ShoppingListController(ShoppingListService) {
-  var list = this;
-
-  list.items = ShoppingListService.getItems();
-
-  list.itemName = "";
-  list.itemQuantity = "";
-
-  list.addItem = function () {
-    ShoppingListService.addItem(list.itemName, list.itemQuantity);
+function FoundItemsDirective() {
+  var menu = {
+    templateUrl: 'removeitem.html',
+    scope: {
+      items: '<',
+      //myTitle: '@title',
+      //badRemove: '=',
+      onRemove: '&'
+    },
+    controller: NarrowItDownController,
+    controllerAs: 'searchlist',
+    bindToController: true
   };
 
-  list.removeItem = function (itemIndex) {
-    ShoppingListService.removeItem(itemIndex);
-  };
+  return menu;
 }
 
+NarrowItDownController.$inject = ['MenuSearchService'];
+function NarrowItDownController(MenuSearchService) {
+  var menu = this;
+var searchlist = [];
+  var promise = MenuSearchService.getMenuCategories();
 
-ShoppingListService.$inject = ['$q', 'WeightLossFilterService'];
-function ShoppingListService($q, WeightLossFilterService) {
-  var service = this;
+  promise.then(function (response) {
+    menu.categories = response.data;
+  })
+  .catch(function (error) {
+    console.log("Something went terribly wrong.");
+  });
 
-  // List of shopping items
-  var items = [];
+  menu.logMenuItems = function (searchTerm) {
+    var promise = MenuSearchService.getMatchedMenuItems(searchTerm);
 
-  // service.addItem = function (name, quantity) {
-  //   var promise = WeightLossFilterService.checkName(name);
-  //
-  //   promise.then(function (response) {
-  //     var nextPromise = WeightLossFilterService.checkQuantity(quantity);
-  //
-  //     nextPromise.then(function (result) {
-  //       var item = {
-  //         name: name,
-  //         quantity: quantity
-  //       };
-  //       items.push(item);
-  //     }, function (errorResponse) {
-  //       console.log(errorResponse.message);
-  //     });
-  //   }, function (errorResponse) {
-  //     console.log(errorResponse.message);
-  //   });
-  // };
-
-
-  // service.addItem = function (name, quantity) {
-  //   var promise = WeightLossFilterService.checkName(name);
-  //
-  //   promise
-  //   .then(function (response) {
-  //     return WeightLossFilterService.checkQuantity(quantity);
-  //   })
-  //   .then(function (response) {
-  //     var item = {
-  //       name: name,
-  //       quantity: quantity
-  //     };
-  //     items.push(item);
-  //   })
-  //   .catch(function (errorResponse) {
-  //     console.log(errorResponse.message);
-  //   });
-  // };
-
-
-  service.addItem = function (name, quantity) {
-    var namePromise = WeightLossFilterService.checkName(name);
-    var quantityPromise = WeightLossFilterService.checkQuantity(quantity);
-
-    $q.all([namePromise, quantityPromise]).
-    then(function (response) {
-      var item = {
-        name: name,
-        quantity: quantity
-      };
-      items.push(item);
+    promise.then(function (response) {
+      searchlist = response.data;
+      console.log(response.data);
     })
-    .catch(function (errorResponse) {
-      console.log(errorResponse.message);
-    });
+    .catch(function (error) {
+      console.log(error);
+    })
   };
+
+}
+
+MenuSearchService.$inject = ['$http', 'ApiBasePath'];
+function MenuSearchService($http, ApiBasePath) {
+  var service = this;
+  service.getMenuCategories = function () {
+      var response = $http({
+        method: "GET",
+        url: (ApiBasePath + "/categories.json")
+      });
+
+      return response;
+    };
+
+    service.getMatchedMenuItems = function (menulist, searchTerm) {
+      var found = [];
+
+      for (var i = 0; i < menulist.items.length; i++) {
+        var name = menulist.items[i].name;
+        if (name.toLowerCase().indexOf("searchTerm") !== -1) {
+      return true;
+        }
+      }
+
+      return false;
+    };
 
   service.removeItem = function (itemIndex) {
-    items.splice(itemIndex, 1);
+    foundItems.splice(itemIndex, 1);
   };
 
-  service.getItems = function () {
-    return items;
-  };
 }
 
-
-WeightLossFilterService.$inject = ['$q', '$timeout'];
-function WeightLossFilterService($q, $timeout) {
-  var service = this;
-
-  service.checkName = function (name) {
-    var deferred = $q.defer();
-
-    var result = {
-      message: ""
-    };
-
-    $timeout(function () {
-      // Check for cookies
-      if (name.toLowerCase().indexOf('cookie') === -1) {
-        deferred.resolve(result)
-      }
-      else {
-        result.message = "Stay away from cookies, Yaakov!";
-        deferred.reject(result);
-      }
-    }, 3000);
-
-    return deferred.promise;
-  };
-
-
-  service.checkQuantity = function (quantity) {
-    var deferred = $q.defer();
-    var result = {
-      message: ""
-    };
-
-    $timeout(function () {
-      // Check for too many boxes
-      if (quantity < 6) {
-        deferred.resolve(result);
-      }
-      else {
-        result.message = "That's too much, Yaakov!";
-        deferred.reject(result);
-      }
-    }, 1000);
-
-    return deferred.promise;
-  };
-}
 
 })();
